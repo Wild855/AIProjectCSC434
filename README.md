@@ -3,7 +3,7 @@
  
 Ai Code by SUNY students
 
-_Code by Yonah Aviv_
+_game Code by Yonah Aviv_
 
 
 
