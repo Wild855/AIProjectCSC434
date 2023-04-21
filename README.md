@@ -3,6 +3,9 @@
  
 Ai Code by SUNY students
 
+_Code by Yonah Aviv_
+
+
 
 ## Overview
 Implementation of Geometry Dash in Python 3.9 with the interactive graphics library for python, Pygame(v2.0+).
@@ -49,6 +52,7 @@ Pydash is not affiliated with Geometry Dash by Robtop Games
 ------
 MIT license
 
-Copyright ©  2020
+Copyright ©  2020 y330 Yonah Aviv
+
 Suny Students
 
