@@ -54,5 +54,5 @@ MIT license
 
 Copyright ©  2020 y330 Yonah Aviv
 
-Suny Students
+and Suny Students
 
