@@ -41,9 +41,6 @@ if you don't recognize anything up to here, read a tutorial for [Python](https:/
   
 ## Miscellaneous 
 
-  
-Disclaimer: Some assets in this project may not be owned by the owner of this repository, Yonah Aviv.
-
 Pydash is not affiliated with Geometry Dash by Robtop Games
 
 
