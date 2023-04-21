@@ -3,7 +3,7 @@
  
 _PydashCode by Yonah Aviv_
 
-Ai Code by SUNY STUDENTS
+Ai Code by SUNY students
 
 
 ## Overview
