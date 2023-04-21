@@ -1,8 +1,6 @@
 # Pydash
 ## Pygame geometry dash
  
-_PydashCode by Yonah Aviv_
-
 Ai Code by SUNY students
 
 
@@ -54,6 +52,6 @@ Pydash is not affiliated with Geometry Dash by Robtop Games
 ------
 MIT license
 
-Copyright ©  2020 y330 Yonah Aviv
+Copyright ©  2020
 Suny Students
 
