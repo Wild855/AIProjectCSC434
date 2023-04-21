@@ -1,7 +1,8 @@
 # Pydash
 ## Pygame geometry dash
  
-_Code by Yonah Aviv_
+_PydashCode by Yonah Aviv_
+Ai Code by SUNY STUDENTS
 
 
 ## Overview
