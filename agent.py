@@ -5,6 +5,7 @@ of the action we are taking, which, when aligned with the learning goals, are tr
 
 """
 
+import math
 import torch
 import random
 import numpy as np
@@ -20,12 +21,16 @@ LR = 0.001              # learning rate
 
 
 class Agent:
+    #how far the player can see ahead of itself
+    global sight_distance 
+    sight_distance = 20
     def __init__(self):
         self.number_of_games = 0
         self.epsilon = 0            # for randomness
         self.gamma = 0.9            # discount rate
         self.memory = deque(maxlen = MAX_MEMORY)        # holds the actions, pops left once we exceed the max memory capacity
-        self.model = Linear_QNet(11, 256, 3)
+        #TODO - make this better (not hardcoded)
+        self.model = Linear_QNet(18*sight_distance, 256, 2)
         self.trainer = QTrainer(self.model, lr = LR, gamma = self.gamma)
 
     '''
@@ -36,10 +41,25 @@ class Agent:
     game        instance of our game
     '''
     def get_state(self, game):
-
         # Jump state
-
         state = []
+        #convert pixels into tile position in array
+        x_pos = math.floor(game.rect.left / 32)
+        
+
+        for row in game.platformList:
+            for i in range(x_pos, x_pos+sight_distance):
+                if i < len(row):
+                    state.append(game.is_spike(row[i]))
+                    state.append(game.is_orb(row[i]))
+                    state.append(game.is_platform(row[i]))
+
+        state = np.array(state, dtype=int)
+        state.append(game.rect.centerx)
+        state.append(game.rect.centery)
+
+        return state
+        
 
         # Danger up and right
 
@@ -119,7 +139,7 @@ class Agent:
         total_score = 0
         record = 0
         agent = Agent()
-        # game = SnakeGameAI()
+        game = Player()
 
         while True:
             state_old = agent.get_state(game)                   # get the old state

@@ -184,6 +184,7 @@ class Player(pygame.sprite.Sprite):
 
         # check if we won or if player won
         eval_outcome(self.win, self.died)
+    
 
 
 """
@@ -374,6 +375,8 @@ def block_map(level_num):
         trash = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in trash:
             lvl.append(row)
+    global platformList
+    platformList = lvl
     return lvl
 
 
@@ -562,7 +565,7 @@ while not done:
 
         start = True
 
-    player.vel.x = 6
+    player.vel.x = 0
 
     eval_outcome(player.win, player.died)
     if keys[pygame.K_UP] or keys[pygame.K_SPACE]:
