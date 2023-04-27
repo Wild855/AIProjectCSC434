@@ -18,21 +18,14 @@ import csv
 import os
 import random
 
-from Coin import Coin
-from End import End
-
 # import the pygame module
 import pygame
+
+import agent
 
 # will make it easier to use pygame functions
 from pygame.math import Vector2
 from pygame.draw import rect
-
-from Orb import Orb
-from Platform import Platform
-from Player import Player
-from Spike import Spike
-from Trick import Trick
 
 # initializes the pygame module
 pygame.init()
@@ -67,7 +60,6 @@ e.g.
 color = lambda: tuple([random.randint(0, 255) for i in range(3)])  # lambda function for random color, not a constant.
 GRAVITY = Vector2(0, 0.86)  # Vector2 is a pygame
 
-'''
 """
 Main player class
 """
@@ -96,7 +88,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_amount = 10  # jump strength
         self.particles = []  # player trail
         self.isjump = False  # is the player jumping?
-        self.vel = Vector2(0, 0)  # velocity starts at zero
+        self.vel = Vector2(0, 0)  # velocity starts at zerlo
 
     def draw_particle_trail(self, x, y, color=(255, 255, 255)):
         """draws a trail of particle-rects in a line at random positions behind the player"""
@@ -257,12 +249,11 @@ class End(Draw):
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
 
-'''
-
 
 """
 Functions
 """
+
 
 def init_level(map):
     """this is similar to 2d lists. it goes through a list of lists, and creates instances of certain obstacles
@@ -455,7 +446,6 @@ def draw_stats(surf, money=0):
     screen.blit(tries, (BAR_LENGTH, 0))
 
 
-# TODO - We will probably have to change this
 def wait_for_key():
     """separate game loop for waiting for a key press while still running game loop
     """
@@ -543,7 +533,7 @@ orbs = []
 win_cubes = []
 
 # initialize level with
-levels = ["level_1.csv", "level_2.csv"];
+levels = ["level_1.csv", "level_2.csv"]
 level_list = block_map(levels[level])
 level_width = (len(level_list[0]) * 32)
 level_height = len(level_list) * 32
@@ -578,9 +568,11 @@ while not done:
         start = True
 
     player.vel.x = 0
+    game = Player()
 
     eval_outcome(player.win, player.died)
-    if keys[pygame.K_UP] or keys[pygame.K_SPACE]:
+    
+    if agent.get_state(game)[0] == 1:
         player.isjump = True
 
     # Reduce the alpha of all pixels on this surface each frame.

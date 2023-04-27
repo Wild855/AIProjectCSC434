@@ -9,9 +9,11 @@ import math
 import torch
 import random
 import numpy as np
+import Player
 from collections import deque
 #from game import SnakeGameAI, Direction, Point  <-- Will need to incorporate the Pydash game class (main.py) to replace this
 from model import Linear_QNet, QTrainer
+
 #from helper import plot
 
 # Predefined variables
@@ -30,7 +32,7 @@ class Agent:
         self.gamma = 0.9            # discount rate
         self.memory = deque(maxlen = MAX_MEMORY)        # holds the actions, pops left once we exceed the max memory capacity
         #TODO - make this better (not hardcoded)
-        self.model = Linear_QNet(18*sight_distance, 256, 2)
+        self.model = Linear_QNet((18*sight_distance*3)+2, 256, 2)
         self.trainer = QTrainer(self.model, lr = LR, gamma = self.gamma)
 
     '''
@@ -50,9 +52,9 @@ class Agent:
         for row in game.platformList:
             for i in range(x_pos, x_pos+sight_distance):
                 if i < len(row):
-                    state.append(game.is_spike(row[i]))
-                    state.append(game.is_orb(row[i]))
-                    state.append(game.is_platform(row[i]))
+                    state.append(row[i] == "Spike")
+                    state.append(row[i] == "Orb")
+                    state.append(row[i] == "0")
 
         state = np.array(state, dtype=int)
         state.append(game.rect.centerx)
@@ -113,7 +115,7 @@ class Agent:
     '''
     Random moves: tradeoff exploration / exploitation
     '''
-    def get_actions(self, state):
+    def get_action(self, state):
         self.epsilon = 80 - self.number_of_games
         final_move = [0,0]
 
