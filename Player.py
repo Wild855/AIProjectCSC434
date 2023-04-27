@@ -1,17 +1,29 @@
 from random import random
 
 import pygame
+from pygame.draw import rect
 from pygame import Vector2
 
-from main import GRAVITY, eval_outcome, alpha_surf, Orb
+from Coin import Coin
+from End import End
+from Orb import Orb
+from Platform import Platform
+from Spike import Spike
+from main import GRAVITY, eval_outcome, alpha_surf, screen
 
+'''
+Breaking up classes from main.py into their own files -SW 04/23/2023
+'''
 
 class Player(pygame.sprite.Sprite):
     """Class for player. Holds update method, win and die variables, collisions and more."""
     win: bool
     died: bool
 
-    def __init__(self, image, platforms, pos, screen, *groups):
+    '''
+    Constructor
+    '''
+    def __init__(self, image, platforms, pos, *groups):
         """
         :param image: block face avatar
         :param platforms: obstacles such as coins, blocks, spikes, and orbs
@@ -31,6 +43,9 @@ class Player(pygame.sprite.Sprite):
         self.isjump = False  # is the player jumping?
         self.vel = Vector2(0, 0)  # velocity starts at zero
 
+    '''
+    Draws the trail of particles that follows the player
+    '''
     def draw_particle_trail(self, x, y, color=(255, 255, 255)):
         """draws a trail of particle-rects in a line at random positions behind the player"""
 
@@ -48,6 +63,15 @@ class Player(pygame.sprite.Sprite):
             if particle[2] <= 0:
                 self.particles.remove(particle)
 
+
+    '''
+    Collision detection
+    
+    Parameters
+    --------------
+    yvel        y velocity
+    platforms   array of platforms
+    '''
     def collide(self, yvel, platforms):
         global coins
 
@@ -55,7 +79,7 @@ class Player(pygame.sprite.Sprite):
             if pygame.sprite.collide_rect(self, p):
                 """pygame sprite builtin collision method,
                 sees if player is colliding with any obstacles"""
-                if isinstance(p, Orb) and (keys[pygame.K_UP] or keys[pygame.K_SPACE]):
+                if isinstance(p, Orb): #and (keys[pygame.K_UP] or keys[pygame.K_SPACE]):
                     pygame.draw.circle(alpha_surf, (255, 255, 0), p.rect.center, 18)
                     screen.blit(pygame.image.load("images/editor-0.9s-47px.gif"), p.rect.center)
                     self.jump_amount = 12  # gives a little boost when hit orb
@@ -80,7 +104,7 @@ class Player(pygame.sprite.Sprite):
 
                     if yvel > 0:
                         """if player is going down(yvel is +)"""
-                        self.rect.bottom = p.rect.top  # dont let the player go through the ground
+                        self.rect.bottom = p.rect.top  # don't let the player go through the ground
                         self.vel.y = 0  # rest y velocity because player is on ground
 
                         # set self.onGround to true because player collided with the ground

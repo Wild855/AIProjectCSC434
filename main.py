@@ -18,12 +18,21 @@ import csv
 import os
 import random
 
+from Coin import Coin
+from End import End
+
 # import the pygame module
 import pygame
 
 # will make it easier to use pygame functions
 from pygame.math import Vector2
 from pygame.draw import rect
+
+from Orb import Orb
+from Platform import Platform
+from Player import Player
+from Spike import Spike
+from Trick import Trick
 
 # initializes the pygame module
 pygame.init()
@@ -58,6 +67,7 @@ e.g.
 color = lambda: tuple([random.randint(0, 255) for i in range(3)])  # lambda function for random color, not a constant.
 GRAVITY = Vector2(0, 0.86)  # Vector2 is a pygame
 
+'''
 """
 Main player class
 """
@@ -247,11 +257,12 @@ class End(Draw):
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
 
+'''
+
 
 """
 Functions
 """
-
 
 def init_level(map):
     """this is similar to 2d lists. it goes through a list of lists, and creates instances of certain obstacles
@@ -444,6 +455,7 @@ def draw_stats(surf, money=0):
     screen.blit(tries, (BAR_LENGTH, 0))
 
 
+# TODO - We will probably have to change this
 def wait_for_key():
     """separate game loop for waiting for a key press while still running game loop
     """
@@ -531,7 +543,7 @@ orbs = []
 win_cubes = []
 
 # initialize level with
-levels = ["level_1.csv", "level_2.csv"]
+levels = ["level_1.csv", "level_2.csv"];
 level_list = block_map(levels[level])
 level_width = (len(level_list[0]) * 32)
 level_height = len(level_list) * 32
