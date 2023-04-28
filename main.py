@@ -381,7 +381,7 @@ def block_map(level_num):
     platformList = lvl
     return lvl
 
-
+'''
 def start_screen():
     """main menu. option to switch level, and controls guide, and game overview."""
     global level
@@ -401,6 +401,7 @@ def start_screen():
         level_memo = font.render(f"Level {level + 1}.", True, (255, 255, 0))
         screen.blit(level_memo, (100, 200))
 
+'''
 
 def reset():
     """resets the sprite groups, music, etc. for death and new level"""
@@ -600,9 +601,11 @@ while not done:
         player_sprite.draw(screen)  # draw player sprite group
     elements.draw(screen)  # draw all other obstacles
 
+    # Check if user has quit the game
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+        '''    
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 """User friendly exit"""
@@ -615,6 +618,7 @@ while not done:
                 """change level by keypad"""
 
                 player.jump_amount -= 1
+        '''
 
     pygame.display.flip()
     clock.tick(60)

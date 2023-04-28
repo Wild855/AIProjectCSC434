@@ -62,11 +62,13 @@ class Player(pygame.sprite.Sprite):
                     self.jump()
                     self.jump_amount = 10  # return jump_amount to normal
 
+                # Maybe define reward for agent in the isinstance methods below?
                 if isinstance(p, End):
                     self.win = True
 
                 if isinstance(p, Spike):
-                    self.died = True  # die on spike
+                    # die on spike
+                    self.died = True
 
                 if isinstance(p, Coin):
                     # keeps track of all coins throughout the whole game(total of 6 is possible)
