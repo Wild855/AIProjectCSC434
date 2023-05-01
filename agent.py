@@ -156,7 +156,7 @@ def train(self):
 
         if done:
             # train long memory and plot result
-            game.result()
+            game.reset()
             agent.number_of_games += 1
             agent.train_long_memory()
 
