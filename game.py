@@ -547,8 +547,9 @@ End of global variables
 
 
 """
-Game Loop
+Game Loop -- Will have to change this because we only need a loop in agent. That loop will be playing the game
 """
+
 while not done:
     keys = pygame.key.get_pressed()
 
@@ -561,8 +562,14 @@ while not done:
     player.vel.x = 6
 
     eval_outcome(player.win, player.died)
-    if keys[pygame.K_UP] or keys[pygame.K_SPACE]:
-        player.isjump = True
+
+    # Agent will call game, if game calls agent, then there will be a circular dependency and cause program to crash
+    #if agent.get_state(game)[0] == 1:
+    #    player.isjump = True
+
+    # Checks if user presses a key to jump
+    #if keys[pygame.K_UP] or keys[pygame.K_SPACE]:
+    #    player.isjump = True
 
     # Reduce the alpha of all pixels on this surface each frame.
     # Control the fade2 speed with the alpha value.
