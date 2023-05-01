@@ -9,7 +9,6 @@ import math
 import torch
 import random
 import numpy as np
-import Player
 from collections import deque
 #from game import SnakeGameAI, Direction, Point  <-- Will need to incorporate the Pydash game class (main.py) to replace this
 from model import Linear_QNet, QTrainer
@@ -141,7 +140,7 @@ def train(self):
     total_score = 0
     record = 0
     agent = Agent()
-    game = Player()
+    #game = Player()
 
     while True:
         state_old = agent.get_state(game)                   # get the old state

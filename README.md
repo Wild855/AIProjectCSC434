@@ -20,7 +20,6 @@ Up-arrow or space-bar to jump over spikes, avoid crashing into walls, and intera
 ## Level information
 Currently, there are 2 levels out of the box, both made using [Tiled](https://www.mapeditor.org/), a 2d tile based level editor.
 
-[Go to code](/main.py)
 
 
 ## Getting Started
