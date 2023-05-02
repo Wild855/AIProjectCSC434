@@ -9,9 +9,13 @@ import math
 import torch
 import random
 import numpy as np
+import main
+import pygame
 from collections import deque
 #from game import SnakeGameAI, Direction, Point  <-- Will need to incorporate the Pydash game class (main.py) to replace this
 from model import Linear_QNet, QTrainer
+from main import Player
+
 
 from helper import plot
 
@@ -48,16 +52,16 @@ class Agent:
         x_pos = math.floor(game.rect.left / 32)
         
 
-        for row in game.platformList:
+        for row in main.platformList:
             for i in range(x_pos, x_pos+sight_distance):
                 if i < len(row):
                     state.append(row[i] == "Spike")
                     state.append(row[i] == "Orb")
                     state.append(row[i] == "0")
 
-        state = np.array(state, dtype=int)
         state.append(game.rect.centerx)
         state.append(game.rect.centery)
+        state = np.array(state, dtype=int)
 
         return state
         
@@ -88,6 +92,7 @@ class Agent:
         else:
             mini_sample = self.memory
 
+        print("size: " + len(mini_sample))
         states, actions, rewards, next_states, dones = zip(*mini_sample)
 
         self.trainer.train_step(states, actions, rewards, next_states, dones)
@@ -134,29 +139,32 @@ class Agent:
 '''
 Training method
 '''
-def train(self):
+def train():
+    print("initializing player")
+    # sets the frame rate of the program
+    clock = pygame.time.Clock()
+    main.reset()
     plot_scores = []
     plot_mean_scores = []
     total_score = 0
     record = 0
     agent = Agent()
-    #game = Player()
+    
 
     while True:
-        state_old = agent.get_state(game)                   # get the old state
+        state_old = agent.get_state(main.player)                   # get the old state
 
         final_move = agent.get_action(state_old)            # get move
 
-        reward, done, score = game.play_step(final_move)    # perform move and get new state
-        state_new = agent.get_state(game)
-
+        reward, done, score = main.player.update(final_move)    # perform move and get new state
+        state_new = agent.get_state(main.player)
         agent.train_short_memory(state_old, final_move, reward, state_new, done)    # train short memory
 
         agent.remember(state_old, final_move, reward, state_new, done)
 
         if done:
             # train long memory and plot result
-            game.reset()
+            main.player.reset()
             agent.number_of_games += 1
             agent.train_long_memory()
 
@@ -174,8 +182,10 @@ def train(self):
             mean_score = total_score / agent.number_of_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores, plot_mean_scores)
+            clock.tick(60)
 
 
 # entry point
 if __name__ == '__main__':
+    print("training started")
     train()
