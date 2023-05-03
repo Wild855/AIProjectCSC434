@@ -150,19 +150,24 @@ def train():
     record = 0
     agent = Agent()
     
+    
 
     while True:
+        clock.tick(60)
         state_old = agent.get_state(main.player)                   # get the old state
 
         final_move = agent.get_action(state_old)            # get move
 
+        print("about to call player.update")
         reward, done, score = main.player.update(final_move)    # perform move and get new state
+        print("finished updating")
         state_new = agent.get_state(main.player)
         agent.train_short_memory(state_old, final_move, reward, state_new, done)    # train short memory
 
         agent.remember(state_old, final_move, reward, state_new, done)
 
         if done:
+            print("done here?")
             # train long memory and plot result
             main.player.reset()
             agent.number_of_games += 1
@@ -182,7 +187,6 @@ def train():
             mean_score = total_score / agent.number_of_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores, plot_mean_scores)
-            clock.tick(60)
 
 
 # entry point

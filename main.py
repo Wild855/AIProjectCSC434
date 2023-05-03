@@ -550,8 +550,8 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, final_move):
         global start, angle
+        print("updating")
         keys = pygame.key.get_pressed()
-        reset()
         start = True
 
         self.vel.x = 0
