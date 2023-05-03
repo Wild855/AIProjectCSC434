@@ -35,7 +35,8 @@ screen = pygame.display.set_mode([800, 600])
 # controls the main game while loop
 
 # controls whether or not to start the game from the main menu
-
+# sets the frame rate of the program
+clock = pygame.time.Clock()
 
 global done, start
 # DEBUG
@@ -245,9 +246,9 @@ def block_map(level_num):
 def start_screen():
     """main menu. option to switch level, and controls guide, and game overview."""
     global level, start
-    if start:
+    if not start:
         # DEBUG
-        print("screen filled black")
+        # print("screen filled black")
         screen.fill(BLACK)
         if pygame.key.get_pressed()[pygame.K_1]:
             level = 0
@@ -272,6 +273,8 @@ def reset():
     print("in reset function here")
 
     if level == 1:
+        #DEBUG
+        print("level 1 music playing")
         pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
     pygame.mixer_music.play()
     player_sprite = pygame.sprite.Group()
@@ -328,6 +331,8 @@ def wait_for_key():
             start_screen()
 
         for event in pygame.event.get():
+            #DEBUG
+            print("Entered event for loop")
             if event.type == pygame.QUIT:
                 pygame.quit()
             if event.type == pygame.KEYDOWN:
@@ -565,12 +570,19 @@ class Player(pygame.sprite.Sprite):
         # DEBUG
         print("updating")
         keys = pygame.key.get_pressed()
+        #start = false at the beginning of the game so that the title screen shows up. Pushing should start the game. 
+        if not start:
+            wait_for_key()
+            reset()
+        #start = true because the game has begun. also prevents the game from showing the title screen again
         start = True
-
-        self.vel.x = 0
+        #Event handler for keys
+        
+        #velocity the player moves at throughout the game
+        self.vel.x = 6
 
         # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
-        self.died = True
+        #self.died = True
         
         if final_move[0] == 1:
             self.isjump = True
@@ -597,6 +609,9 @@ class Player(pygame.sprite.Sprite):
             """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
             player_sprite.draw(screen)  # draw player sprite group
         elements.draw(screen)  # draw all other obstacles
+        #DEBUG (adding old code back)
+        pygame.display.flip()
+        clock.tick(60)
 
         # do x-axis collisions
         self.collide(0, self.platforms)
