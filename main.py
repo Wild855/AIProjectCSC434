@@ -38,8 +38,11 @@ screen = pygame.display.set_mode([800, 600])
 
 
 global done, start
+# DEBUG
 print("start initialized here")
 start = False
+
+# DEBUG
 print(start)
 done = False
 
@@ -243,6 +246,7 @@ def start_screen():
     """main menu. option to switch level, and controls guide, and game overview."""
     global level, start
     if start:
+        # DEBUG
         print("screen filled black")
         screen.fill(BLACK)
         if pygame.key.get_pressed()[pygame.K_1]:
@@ -263,8 +267,9 @@ def start_screen():
 def reset():
     """resets the sprite groups, music, etc. for death and new level"""
     global player, elements, player_sprite, level
+
+    # DEBUG
     print("in reset function here")
-    
 
     if level == 1:
         pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
@@ -272,7 +277,10 @@ def reset():
     player_sprite = pygame.sprite.Group()
     elements = pygame.sprite.Group()
     player = Player(avatar, elements, (150, 150), player_sprite)
+
+    # DEBUG
     print("Player initialized here")
+
     init_level(
             block_map(
                     level_num=levels[level]))
@@ -387,7 +395,9 @@ attempts = 0
 coins = 0
 global angle
 angle = 0
+# DEBUG
 print("angle assigned here")
+
 level = 0
 
 # list
@@ -450,16 +460,18 @@ class Player(pygame.sprite.Sprite):
         :param pos: starting position
         :param groups: takes any number of sprite groups.
         """
+        # DEBUG
         print("in init function")
+
         super().__init__(*groups)
+
+        # DEBUG
         print("test")
+
         self.onGround = False  # player on ground?
         self.platforms = platforms  # obstacles but create a class variable for it
         self.died = False  # player died?
         self.win = False  # player beat level?
-        
-        
-        
 
         self.image = pygame.transform.smoothscale(image, (32, 32))
         self.rect = self.image.get_rect(center=pos)  # get rect gets a Rect object from the image
@@ -550,11 +562,15 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, final_move):
         global start, angle
+        # DEBUG
         print("updating")
         keys = pygame.key.get_pressed()
         start = True
 
         self.vel.x = 0
+
+        # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
+        self.died = True
         
         if final_move[0] == 1:
             self.isjump = True
@@ -613,6 +629,8 @@ class Player(pygame.sprite.Sprite):
         #eval_outcome(self.win, self.died)
 
         reward = self.reward()
+
+        # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
 
     

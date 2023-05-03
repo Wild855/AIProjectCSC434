@@ -14,7 +14,7 @@ import pygame
 from collections import deque
 #from game import SnakeGameAI, Direction, Point  <-- Will need to incorporate the Pydash game class (main.py) to replace this
 from model import Linear_QNet, QTrainer
-from main import Player
+from main import Player, reset
 
 
 from helper import plot
@@ -92,7 +92,9 @@ class Agent:
         else:
             mini_sample = self.memory
 
-        print("size: " + len(mini_sample))
+        # DEBUG
+        print("size: ", len(mini_sample))
+
         states, actions, rewards, next_states, dones = zip(*mini_sample)
 
         self.trainer.train_step(states, actions, rewards, next_states, dones)
@@ -140,6 +142,7 @@ class Agent:
 Training method
 '''
 def train():
+    # DEBUG
     print("initializing player")
     # sets the frame rate of the program
     clock = pygame.time.Clock()
@@ -149,8 +152,7 @@ def train():
     total_score = 0
     record = 0
     agent = Agent()
-    
-    
+
 
     while True:
         clock.tick(60)
@@ -158,18 +160,24 @@ def train():
 
         final_move = agent.get_action(state_old)            # get move
 
+        # DEBUG
         print("about to call player.update")
         reward, done, score = main.player.update(final_move)    # perform move and get new state
+
+        # DEBUG
         print("finished updating")
         state_new = agent.get_state(main.player)
+
         agent.train_short_memory(state_old, final_move, reward, state_new, done)    # train short memory
 
         agent.remember(state_old, final_move, reward, state_new, done)
 
+        # We aren't reaching this point because done is not True 05/03/2023 -SW
         if done:
+            # DEBUG
             print("done here?")
             # train long memory and plot result
-            main.player.reset()
+            main.reset()
             agent.number_of_games += 1
             agent.train_long_memory()
 
@@ -191,5 +199,6 @@ def train():
 
 # entry point
 if __name__ == '__main__':
+    # DEBUG
     print("training started")
     train()
