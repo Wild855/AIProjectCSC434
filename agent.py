@@ -143,9 +143,8 @@ Training method
 '''
 def train():
     # DEBUG
-    print("initializing player")
-    # sets the frame rate of the program
-    #clock = pygame.time.Clock()
+    print("the start of train()")
+   
     main.reset()
     plot_scores = []
     plot_mean_scores = []
@@ -155,7 +154,7 @@ def train():
 
 
     while True:
-        #clock.tick(60)
+        
         state_old = agent.get_state(main.player)                   # get the old state
 
         final_move = agent.get_action(state_old)            # get move

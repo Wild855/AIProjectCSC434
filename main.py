@@ -368,6 +368,8 @@ def resize(img, size=(32, 32)):
 """
 Global variables
 """
+#DEBUG
+print("global vars assigned")
 font = pygame.font.SysFont("lucidaconsole", 20)
 
 # square block face is main character the icon of the window is the block face
@@ -401,7 +403,7 @@ coins = 0
 global angle
 angle = 0
 # DEBUG
-print("angle assigned here")
+
 
 level = 0
 
@@ -484,7 +486,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_amount = 10  # jump strength
         self.particles = []  # player trail
         self.isjump = False  # is the player jumping?
-        self.vel = Vector2(0, 0)  # velocity starts at zerlo
+        self.vel = Vector2(0, 0)  # velocity starts at zero
 
     def draw_particle_trail(self, x, y, color=(255, 255, 255)):
         """draws a trail of particle-rects in a line at random positions behind the player"""
@@ -563,6 +565,8 @@ class Player(pygame.sprite.Sprite):
                         self.died = True
 
     def jump(self):
+        #DEBUG
+        print("in jump function rn")
         self.vel.y = -self.jump_amount  # players vertical velocity is negative so ^
 
     def update(self, final_move):
@@ -576,47 +580,23 @@ class Player(pygame.sprite.Sprite):
             reset()
         #start = true because the game has begun. also prevents the game from showing the title screen again
         start = True
-        #Event handler for keys
-        
-        #velocity the player moves at throughout the game
-        self.vel.x = 6
+
+        """Move player"""
+        self._move(final_move)
+
 
         # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
         #self.died = True
+        #print("Final move value:")
+        #print(final_move[0])
         
-        if final_move[0] == 1:
-            self.isjump = True
 
-        # Reduce the alpha of all pixels on this surface each frame.
-        # Control the fade2 speed with the alpha value.
-
-        alpha_surf.fill((255, 255, 255, 1), special_flags=pygame.BLEND_RGBA_MULT)
-
-        CameraX = self.vel.x  # for moving obstacles
-        move_map()  # apply CameraX to all elements
-        screen.blit(bg, (0, 0))  # Clear the screen(with the bg)
-
-        self.draw_particle_trail(self.rect.left - 1, self.rect.bottom + 2,
-                                WHITE)
-        screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
-        draw_stats(screen, coin_count(coins))
-
-        if self.isjump:
-            """rotate the player by an angle and blit it if player is jumping"""
-            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
-            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
-        else:
-            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
-            player_sprite.draw(screen)  # draw player sprite group
-        elements.draw(screen)  # draw all other obstacles
-        #DEBUG (adding old code back)
-        pygame.display.flip()
-        clock.tick(60)
+        """check if game over """
 
         # do x-axis collisions
         self.collide(0, self.platforms)
 
-        # increment in y direction
+        # increment.update in y direction
         self.rect.top += self.vel.y
 
         # assuming player in the air, and if not it will be set to inversed after collide
@@ -624,12 +604,6 @@ class Player(pygame.sprite.Sprite):
 
         # do y-axis collisions
         self.collide(self.vel.y, self.platforms)
-
-        """update player"""
-        if self.isjump:
-            if self.onGround or self.canJump:
-                """if player wants to jump and player is on the ground: only then is jump allowed"""
-                self.jump()
 
         if not self.onGround:  # only accelerate with gravity if in the air
             self.vel += GRAVITY  # Gravity falls
@@ -645,12 +619,58 @@ class Player(pygame.sprite.Sprite):
 
         reward = self.reward()
 
+        """update ui and clock"""
+        self._update_ui()
+        clock.tick(60)
+
+        print("end of update")
+        print("velocity is:")
+        print(self.vel.x)
         # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
 
     
+    def _move(self, final_move):
+        global angle
+        if final_move[0] == 1:
+           self.isjump = True
+        
+        if self.isjump:
+            # removed line from if statement: or self.canJump
+            if self.onGround:
+                """if player wants to jump and player is on the ground: only then is jump allowed"""
+                self.jump()
 
+            """rotate the player by an angle and blit it if player is jumping"""
+            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
+            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
+        else:
+            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
+            player_sprite.draw(screen)  # draw player sprite group
 
+    def _update_ui(self):
+        #map, player movement update
+        #velocity the player moves at throughout the game
+        #print(self.vel.x)
+        self.vel.x = 6
+        # Reduce the alpha of all pixels on this surface each frame.
+        # Control the fade2 speed with the alpha value.
+        #draw background
+        alpha_surf.fill((255, 255, 255, 1), special_flags=pygame.BLEND_RGBA_MULT)
+        #apply player speed to camera
+        CameraX = self.vel.x  # for moving obstacles
+        move_map()  # apply CameraX to all elements
+        screen.blit(bg, (0, 0))  # Clear the screen(with the bg)
+
+        self.draw_particle_trail(self.rect.left - 1, self.rect.bottom + 2,
+                                WHITE)
+        screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
+        draw_stats(screen, coin_count(coins))
+
+        elements.draw(screen)  # draw all other obstacles
+        #DEBUG (adding old code back)
+        pygame.display.flip()
+        
 """
 Obstacle classes
 """
