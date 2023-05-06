@@ -230,6 +230,7 @@ def eval_outcome(won: bool, died: bool):
     if died:
         death_screen()
 
+    #return
 
 def block_map(level_num):
     """
@@ -278,8 +279,8 @@ def reset():
     if level == 1:
         #DEBUG
         print("level 1 music playing")
-        pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
-    pygame.mixer_music.play()
+        #pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
+    #pygame.mixer_music.play()
     player_sprite = pygame.sprite.Group()
     elements = pygame.sprite.Group()
     player = Player(avatar, elements, (150, 150), player_sprite)
@@ -297,6 +298,10 @@ def move_map():
     """moves obstacles along the screen"""
     for sprite in elements:
         sprite.rect.x -= CameraX
+        player.x_pos -= CameraX
+
+        # DEBUG
+        #print("Player x position is: ", player.x_pos)
 
 
 def draw_stats(surf, money=0):
@@ -313,7 +318,8 @@ def draw_stats(surf, money=0):
     BAR_HEIGHT = 10
     for i in range(1, money):
         screen.blit(coin, (BAR_LENGTH, 25))
-    fill += 0.5
+    #fill += 0.5
+    fill += 0.1
     outline_rect = pygame.Rect(0, 0, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(0, 0, fill, BAR_HEIGHT)
     col = progress_colors[int(fill / 100)]
@@ -407,7 +413,6 @@ global angle
 angle = 0
 # DEBUG
 
-
 level = 0
 
 # list
@@ -430,7 +435,7 @@ text = font.render('image', False, (255, 255, 0))
 
 # music
 music = pygame.mixer_music.load(os.path.join("music", "bossfight-Vextron.mp3"))
-pygame.mixer_music.play()
+#pygame.mixer_music.play()
 
 # bg image
 bg = pygame.image.load(os.path.join("images", "bg.png"))
@@ -513,7 +518,10 @@ class Player(pygame.sprite.Sprite):
         
         if(self.died):
             return -10
-        if(self.x_pos < new_x_pos):
+        if (self.x_pos < new_x_pos):    # TODO - x_pos and new_pos are not changing
+            #DEBUG
+            print("Got farther than last record! Current x_pos: ", self.x_pos, "\n")
+            print("Old x_pos: ", new_x_pos)
             self.x_pos = new_x_pos
             return 10
         return 0
@@ -540,6 +548,9 @@ class Player(pygame.sprite.Sprite):
                     self.died = True  # die on spike
                     #reset()
                     attempts += 1
+
+                    # DEBUG
+                    print("Player position when died: ", player.x_pos)
 
                 if isinstance(p, Coin):
                     # keeps track of all coins throughout the whole game(total of 6 is possible)
@@ -570,6 +581,10 @@ class Player(pygame.sprite.Sprite):
                         self.rect.right = p.rect.left  # dont let player go through walls
                         self.died = True
                         attempts += 1
+
+                        # DEBUG
+                        print("Player position when died: ", player.x_pos)
+                        print("Player position when died: ", player.x_pos)
 
     def jump(self):
         #DEBUG
@@ -626,13 +641,18 @@ class Player(pygame.sprite.Sprite):
 
         reward = self.reward()
 
+        # DEBUG
+        print("reward is: ", reward)
+
         """update ui and clock"""
         self._update_ui()
         clock.tick(60)
 
+        # DEBUG
         print("end of update")
+        # DEBUG
         print("velocity is:", self.vel.x)
-        print("reward is: ", reward)
+
         # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
 
@@ -654,6 +674,8 @@ class Player(pygame.sprite.Sprite):
         else:
             """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
             player_sprite.draw(screen)  # draw player sprite group
+            # DEBUG
+            print("Player is false")
 
     def _update_ui(self):
         #map, player movement update
@@ -689,7 +711,7 @@ Obstacle classes
 
 
 
-player = Player(avatar, elements, (150, 150), player_sprite)
+#player = Player(avatar, elements, (150, 150), player_sprite)
 
 
 
