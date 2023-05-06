@@ -47,6 +47,8 @@ start = False
 print(start)
 done = False
 
+attempts = 0
+
 """
 CONSTANTS
 """
@@ -182,6 +184,7 @@ def blitRotate(surf, image, pos, originpos: tuple, angle: float):
 
 def won_screen():
     """show this screen when beating a level"""
+    #global attempts, level, fill
     global attempts, level, fill
     attempts = 0
     player_sprite.clear(player.image, screen)
@@ -290,6 +293,7 @@ def reset():
 
 
 def move_map():
+    CameraX = 5
     """moves obstacles along the screen"""
     for sprite in elements:
         sprite.rect.x -= CameraX
@@ -398,7 +402,6 @@ trick = pygame.transform.smoothscale(trick, (32, 32))
 fill = 0
 num = 0
 CameraX = 0
-attempts = 0
 coins = 0
 global angle
 angle = 0
@@ -413,7 +416,7 @@ orbs = []
 win_cubes = []
 
 # initialize level with
-levels = ["level_1.csv", "level_2.csv"]
+levels = ["level_1_copy.csv", "level_2.csv"]
 level_list = block_map(levels[level])
 level_width = (len(level_list[0]) * 32)
 level_height = len(level_list) * 32
@@ -468,7 +471,7 @@ class Player(pygame.sprite.Sprite):
         :param groups: takes any number of sprite groups.
         """
         # DEBUG
-        print("in init function")
+        print("in Player init function")
 
         super().__init__(*groups)
 
@@ -516,7 +519,8 @@ class Player(pygame.sprite.Sprite):
         return 0
 
     def collide(self, yvel, platforms):
-        global coins
+        global coins, attempts
+        #attempts = 0
         self.canJump = False
         for p in platforms:
             if pygame.sprite.collide_rect(self, p):
@@ -534,6 +538,8 @@ class Player(pygame.sprite.Sprite):
 
                 if isinstance(p, Spike):
                     self.died = True  # die on spike
+                    #reset()
+                    attempts += 1
 
                 if isinstance(p, Coin):
                     # keeps track of all coins throughout the whole game(total of 6 is possible)
@@ -563,6 +569,7 @@ class Player(pygame.sprite.Sprite):
                         self.vel.x = 0
                         self.rect.right = p.rect.left  # dont let player go through walls
                         self.died = True
+                        attempts += 1
 
     def jump(self):
         #DEBUG
@@ -624,8 +631,8 @@ class Player(pygame.sprite.Sprite):
         clock.tick(60)
 
         print("end of update")
-        print("velocity is:")
-        print(self.vel.x)
+        print("velocity is:", self.vel.x)
+        print("reward is: ", reward)
         # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
 
