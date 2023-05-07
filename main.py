@@ -210,22 +210,23 @@ class Player(pygame.sprite.Sprite):
                     self.jump()
                     self.jump_amount = 10  # return jump_amount to normal
 
-                if isinstance(p, End):
+                elif isinstance(p, End):
                     self.win = True
 
-                if isinstance(p, Spike):
+                elif isinstance(p, Spike):
                     self.died = True  # die on spike
 
                     #DEBUG
                     print("Collided with Spike. Player dead? ", self.died)
 
                     attempts += 1
+
                     #reset()
 
                     # DEBUG
                     #print("Player position when died: ", player.x_pos)
 
-                if isinstance(p, Coin):
+                elif isinstance(p, Coin):
                     # keeps track of all coins throughout the whole game(total of 6 is possible)
                     coins += 1
 
@@ -233,7 +234,7 @@ class Player(pygame.sprite.Sprite):
                     p.rect.x = 0
                     p.rect.y = 0
 
-                if isinstance(p, Platform):  # these are the blocks (may be confusing due to self.platforms)
+                elif isinstance(p, Platform):  # these are the blocks (may be confusing due to self.platforms)
 
                     if yvel > 0:
                         """if player is going down(yvel is +)"""
