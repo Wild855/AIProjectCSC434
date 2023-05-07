@@ -1,4 +1,15 @@
+# Jet Brains files
 .idea/
-.history/
+
+# VS Code
 .vscode/
+
+# Mac files
+.DS_Store
+
+# Python files
+__pycache__
+
+# Misc
+.history/
 .*/

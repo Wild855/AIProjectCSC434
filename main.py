@@ -133,7 +133,7 @@ def init_level(map):
             if col == "Coin":
                 Coin(coin, (x, y), elements)
 
-            if col == "Spike":
+            if col == "3":
                 Spike(spike, (x, y), elements)
             if col == "Orb":
                 orbs.append([x, y])
@@ -283,7 +283,7 @@ def reset():
     #pygame.mixer_music.play()
     player_sprite = pygame.sprite.Group()
     elements = pygame.sprite.Group()
-    player = Player(avatar, elements, (150, 150), player_sprite)
+    player = Player(avatar, elements, (100, 150), player_sprite)
 
     # DEBUG
     print("Player initialized here")
@@ -298,7 +298,8 @@ def move_map():
     """moves obstacles along the screen"""
     for sprite in elements:
         sprite.rect.x -= CameraX
-        player.x_pos -= CameraX
+        #player.x_pos -= CameraX
+
 
         # DEBUG
         #print("Player x position is: ", player.x_pos)
@@ -421,7 +422,7 @@ orbs = []
 win_cubes = []
 
 # initialize level with
-levels = ["level_1_copy.csv", "level_2.csv"]
+levels = ["level_1.csv", "level_2.csv"]
 level_list = block_map(levels[level])
 level_width = (len(level_list[0]) * 32)
 level_height = len(level_list) * 32
@@ -491,6 +492,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.smoothscale(image, (32, 32))
         self.rect = self.image.get_rect(center=pos)  # get rect gets a Rect object from the image
         self.x_pos = math.floor(self.rect.left / 32)
+        self.pos_x = pos[0]
         self.jump_amount = 10  # jump strength
         self.particles = []  # player trail
         self.isjump = False  # is the player jumping?
@@ -518,13 +520,14 @@ class Player(pygame.sprite.Sprite):
         
         if(self.died):
             return -10
-        if (self.x_pos < new_x_pos):    # TODO - x_pos and new_pos are not changing
+        else:
             #DEBUG
-            print("Got farther than last record! Current x_pos: ", self.x_pos, "\n")
-            print("Old x_pos: ", new_x_pos)
-            self.x_pos = new_x_pos
+            print("Got farther than last record! Current new_x_pos: ", new_x_pos, "\n")
+            print("Old x_pos: ", self.pos_x)
+            #self.pos_x = new_x_pos
+            print("New x_pos: ", self.pos_x)
             return 10
-        return 0
+
 
     def collide(self, yvel, platforms):
         global coins, attempts
@@ -584,12 +587,15 @@ class Player(pygame.sprite.Sprite):
 
                         # DEBUG
                         print("Player position when died: ", player.x_pos)
-                        print("Player position when died: ", player.x_pos)
+
 
     def jump(self):
         #DEBUG
         print("in jump function rn")
         self.vel.y = -self.jump_amount  # players vertical velocity is negative so ^
+
+    def move_player(self):
+        self.pos_x += self.vel.x
 
     def update(self, final_move):
         global start, angle
@@ -605,7 +611,7 @@ class Player(pygame.sprite.Sprite):
 
         """Move player"""
         self._move(final_move)
-
+        self._update_ui()
 
         # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
         #self.died = True
@@ -645,7 +651,7 @@ class Player(pygame.sprite.Sprite):
         print("reward is: ", reward)
 
         """update ui and clock"""
-        self._update_ui()
+        pygame.display.flip()
         clock.tick(60)
 
         # DEBUG
@@ -659,6 +665,10 @@ class Player(pygame.sprite.Sprite):
     
     def _move(self, final_move):
         global angle
+
+        # Trying to change x_pos
+        self.move_player()
+
         if final_move[0] == 1:
            self.isjump = True
         
@@ -697,8 +707,7 @@ class Player(pygame.sprite.Sprite):
         draw_stats(screen, coin_count(coins))
 
         elements.draw(screen)  # draw all other obstacles
-        #DEBUG (adding old code back)
-        pygame.display.flip()
+
         
 """
 Obstacle classes
