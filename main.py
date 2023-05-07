@@ -304,7 +304,7 @@ def wait_for_key():
     global level, start
     waiting = True
     while waiting:
-        #clock.tick(60)
+        clock.tick(60)
         pygame.display.flip()
 
         if not start:
@@ -584,29 +584,16 @@ class Player(pygame.sprite.Sprite):
             reset()
         #start = true because the game has begun. also prevents the game from showing the title screen again
         start = True
-
+        self.vel.x = 6
         """Move player"""
         self._move(final_move)
-
-        if self.isjump:
-            # removed line from if statement: or self.canJump
-            if self.onGround:
-                """if player wants to jump and player is on the ground: only then is jump allowed"""
-                self.jump()
-
-            """rotate the player by an angle and blit it if player is jumping"""
-            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
-            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
-        else:
-            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
-            player_sprite.draw(screen)  # draw player sprite group
-
-        # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
-        #self.died = True
-        #print("Final move value:")
-        #print(final_move[0])
+        """update ui and clock"""
+        self._update_ui()
+         #map, player movement update
+        #velocity the player moves at throughout the game
+        #print(self.vel.x)
+        self.vel.x = 6
         
-
         """check if game over """
 
         # do x-axis collisions
@@ -635,13 +622,8 @@ class Player(pygame.sprite.Sprite):
 
         reward = self.reward()
 
-        """update ui and clock"""
-        self._update_ui()
-        clock.tick(60)
 
-        #print("end of update")
-        #print("velocity is:")
-        #print(self.vel.x)
+       
         # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
 
@@ -650,13 +632,21 @@ class Player(pygame.sprite.Sprite):
         global angle
         if final_move[0] == 1:
            self.isjump = True
+        if self.isjump:
+            if self.onGround:
+                """if player wants to jump and player is on the ground: only then is jump allowed"""
+                self.jump()
+        """
+            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
+            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
+        else:
+            
+            player_sprite.draw(screen)  # draw player sprite group
+        """
         
-
+    
     def _update_ui(self):
-        #map, player movement update
-        #velocity the player moves at throughout the game
-        #print(self.vel.x)
-        self.vel.x = 6
+        global angle
         # Reduce the alpha of all pixels on this surface each frame.
         # Control the fade2 speed with the alpha value.
         #draw background
@@ -670,10 +660,19 @@ class Player(pygame.sprite.Sprite):
                                 WHITE)
         screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
         draw_stats(screen, coin_count(coins))
-
+        if self.isjump:
+            """rotate the player by an angle and blit it if player is jumping"""
+            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
+            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
+        else:
+            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
+            player_sprite.draw(screen)  # draw player sprite group
         elements.draw(screen)  # draw all other obstacles
         #DEBUG (adding old code back)
         pygame.display.flip()
+        clock.tick(60)
+        
+        
 
     
         

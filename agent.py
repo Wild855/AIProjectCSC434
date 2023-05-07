@@ -191,14 +191,14 @@ def train():
 
             # Print results
             print('Game', agent.number_of_games, 'Score', score, 'Record', record)
-
+            """
             # update scores
             plot_scores.append(score)
             total_score += score
             mean_score = total_score / agent.number_of_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores, plot_mean_scores)
-
+            """
 
 # entry point
 if __name__ == '__main__':
