@@ -40,11 +40,11 @@ clock = pygame.time.Clock()
 
 global done, start
 # DEBUG
-print("start initialized here")
+#print("start initialized here")
 start = False
 
 # DEBUG
-print(start)
+#print(start)
 done = False
 
 """
@@ -265,31 +265,11 @@ def start_screen():
         screen.blit(level_memo, (100, 200))
 
 
-def reset():
-    """resets the sprite groups, music, etc. for death and new level"""
-    global player, elements, player_sprite, level
 
-    # DEBUG
-    print("in reset function here")
-
-    if level == 1:
-        #DEBUG
-        print("level 1 music playing")
-        pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
-    pygame.mixer_music.play()
-    player_sprite = pygame.sprite.Group()
-    elements = pygame.sprite.Group()
-    player = Player(avatar, elements, (150, 150), player_sprite)
-
-    # DEBUG
-    print("Player initialized here")
-
-    init_level(
-            block_map(
-                    level_num=levels[level]))
 
 
 def move_map():
+    CameraX = 6
     """moves obstacles along the screen"""
     for sprite in elements:
         sprite.rect.x -= CameraX
@@ -329,10 +309,10 @@ def wait_for_key():
 
         if not start:
             start_screen()
-
+            #print("Entering event for loop")
         for event in pygame.event.get():
             #DEBUG
-            print("Entered event for loop")
+            
             if event.type == pygame.QUIT:
                 pygame.quit()
             if event.type == pygame.KEYDOWN:
@@ -364,12 +344,36 @@ def resize(img, size=(32, 32)):
     resized = pygame.transform.smoothscale(img, size)
     return resized
 
+def reset():
+        """resets the sprite groups, music, etc. for death and new level"""
+        global player, elements, player_sprite, level, fill, self
+        fill = 0
+        # DEBUG
+        # print("in reset function here")
 
+        #if level == 1:
+            #DEBUG
+            #print("level 1 music playing")
+            # pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
+        # pygame.mixer_music.play()
+        player_sprite = pygame.sprite.Group()
+        elements = pygame.sprite.Group()
+        player = Player(avatar, elements, (150, 150), player_sprite)
+
+        #if self.died:
+           # player_sprite.clear(player.image, screen)
+
+        # DEBUG
+        # print("Player initialized here")
+
+        init_level(
+                block_map(
+                        level_num=levels[level]))
 """
 Global variables
 """
 #DEBUG
-print("global vars assigned")
+# print("global vars assigned")
 font = pygame.font.SysFont("lucidaconsole", 20)
 
 # square block face is main character the icon of the window is the block face
@@ -426,8 +430,8 @@ pygame.display.set_caption('Pydash: Geometry Dash in Python')
 text = font.render('image', False, (255, 255, 0))
 
 # music
-music = pygame.mixer_music.load(os.path.join("music", "bossfight-Vextron.mp3"))
-pygame.mixer_music.play()
+#music = pygame.mixer_music.load(os.path.join("music", "bossfight-Vextron.mp3"))
+#pygame.mixer_music.play()
 
 # bg image
 bg = pygame.image.load(os.path.join("images", "bg.png"))
@@ -468,12 +472,12 @@ class Player(pygame.sprite.Sprite):
         :param groups: takes any number of sprite groups.
         """
         # DEBUG
-        print("in init function")
+        #print("in init function")
 
         super().__init__(*groups)
 
         # DEBUG
-        print("test")
+        #print("test")
 
         self.onGround = False  # player on ground?
         self.platforms = platforms  # obstacles but create a class variable for it
@@ -566,13 +570,13 @@ class Player(pygame.sprite.Sprite):
 
     def jump(self):
         #DEBUG
-        print("in jump function rn")
+        #print("in jump function rn")
         self.vel.y = -self.jump_amount  # players vertical velocity is negative so ^
 
     def update(self, final_move):
         global start, angle
         # DEBUG
-        print("updating")
+        #print("updating")
         keys = pygame.key.get_pressed()
         #start = false at the beginning of the game so that the title screen shows up. Pushing should start the game. 
         if not start:
@@ -584,6 +588,18 @@ class Player(pygame.sprite.Sprite):
         """Move player"""
         self._move(final_move)
 
+        if self.isjump:
+            # removed line from if statement: or self.canJump
+            if self.onGround:
+                """if player wants to jump and player is on the ground: only then is jump allowed"""
+                self.jump()
+
+            """rotate the player by an angle and blit it if player is jumping"""
+            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
+            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
+        else:
+            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
+            player_sprite.draw(screen)  # draw player sprite group
 
         # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
         #self.died = True
@@ -623,9 +639,9 @@ class Player(pygame.sprite.Sprite):
         self._update_ui()
         clock.tick(60)
 
-        print("end of update")
-        print("velocity is:")
-        print(self.vel.x)
+        #print("end of update")
+        #print("velocity is:")
+        #print(self.vel.x)
         # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
 
@@ -635,18 +651,6 @@ class Player(pygame.sprite.Sprite):
         if final_move[0] == 1:
            self.isjump = True
         
-        if self.isjump:
-            # removed line from if statement: or self.canJump
-            if self.onGround:
-                """if player wants to jump and player is on the ground: only then is jump allowed"""
-                self.jump()
-
-            """rotate the player by an angle and blit it if player is jumping"""
-            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
-            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
-        else:
-            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
-            player_sprite.draw(screen)  # draw player sprite group
 
     def _update_ui(self):
         #map, player movement update
@@ -670,14 +674,12 @@ class Player(pygame.sprite.Sprite):
         elements.draw(screen)  # draw all other obstacles
         #DEBUG (adding old code back)
         pygame.display.flip()
+
+    
         
 """
 Obstacle classes
 """
-
-
-
-
 
 
 

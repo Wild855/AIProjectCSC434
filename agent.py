@@ -93,7 +93,7 @@ class Agent:
             mini_sample = self.memory
 
         # DEBUG
-        print("size: ", len(mini_sample))
+        # print("size: ", len(mini_sample))
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
 
@@ -143,28 +143,32 @@ Training method
 '''
 def train():
     # DEBUG
-    print("the start of train()")
-   
+    #print("the start of train()")
+    #print("starting reset")
     main.reset()
+    #print("reset end")
     plot_scores = []
     plot_mean_scores = []
     total_score = 0
     record = 0
     agent = Agent()
-
+    #print("printing player sprite")
+    #print(main.player_sprite)
 
     while True:
+        #print("in while loop")
         
         state_old = agent.get_state(main.player)                   # get the old state
 
         final_move = agent.get_action(state_old)            # get move
-
+    
         # DEBUG
-        print("about to call player.update")
+        #print("about to call player.update")
+        #main.player_sprite.update()
         reward, done, score = main.player.update(final_move)    # perform move and get new state
 
         # DEBUG
-        print("finished updating")
+        #print("finished updating")
         state_new = agent.get_state(main.player)
 
         agent.train_short_memory(state_old, final_move, reward, state_new, done)    # train short memory
@@ -174,7 +178,7 @@ def train():
         # We aren't reaching this point because done is not True 05/03/2023 -SW
         if done:
             # DEBUG
-            print("done here?")
+            #print("done here?")
             # train long memory and plot result
             main.reset()
             agent.number_of_games += 1

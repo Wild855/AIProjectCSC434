@@ -90,7 +90,7 @@ class QTrainer:
         state = torch.tensor(state, dtype = torch.float)
         next_state = torch.tensor(next_state, dtype = torch.float)
         action = torch.tensor(action, dtype = torch.float)
-        print(reward)
+        #print(reward)
         reward = torch.tensor(reward, dtype = torch.float)
         # (n, x)
 
