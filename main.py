@@ -64,7 +64,9 @@ class Draw(pygame.sprite.Sprite):
     def __init__(self, image, pos, *groups):
         super().__init__(*groups)
         self.image = image
+        self.pos = pos
         self.rect = self.image.get_rect(topleft=pos)
+
 #  ====================================================================================================================#
 #  classes of all obstacles. this may seem repetitive but it is useful(to my knowledge)
 #  ====================================================================================================================#
@@ -81,6 +83,7 @@ class Spike(Draw):
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
+
 
 
 class Coin(Draw):
@@ -114,7 +117,6 @@ class End(Draw):
 """
 Main player class
 """
-
 
 class Player(pygame.sprite.Sprite):
     """Class for player. Holds update method, win and die variables, collisions and more."""
@@ -150,6 +152,7 @@ class Player(pygame.sprite.Sprite):
         self.particles = []  # player trail
         self.isjump = False  # is the player jumping?
         self.vel = Vector2(0, 0)  # velocity starts at zero
+        self.collided = False
 
     def draw_particle_trail(self, x, y, color=(255, 255, 255)):
         """draws a trail of particle-rects in a line at random positions behind the player"""
@@ -175,25 +178,36 @@ class Player(pygame.sprite.Sprite):
             return -10
         else:
             # DEBUG
-            print("Got farther than last record! Current new_x_pos: ", new_x_pos, "\n")
-            print("Old x_pos: ", self.pos_x)
+            #print("Got farther than last record! Current new_x_pos: ", new_x_pos, "\n")
+            #print("Old x_pos: ", self.pos_x)
             # self.pos_x = new_x_pos
-            print("New x_pos: ", self.pos_x)
+            #print("New x_pos: ", self.pos_x)
             return 10
 
     def collide(self, yvel, platforms):
         global coins, attempts
-        # attempts = 0
+
         self.canJump = False
+
+        # DEBUG
+        print("Begin collide(): Player dead ? ", self.died)
+        print("Collide(): Collided? ", self.collided)
+
         for p in platforms:
             if pygame.sprite.collide_rect(self, p):
                 """pygame sprite builtin collision method,
                 sees if player is colliding with any obstacles"""
+
+                self.collided = True
+                #DEBUG
+                print("Collide(): Inside if statement...Collided? ", self.collided)
+
                 if isinstance(p, Orb):
                     pygame.draw.circle(alpha_surf, (255, 255, 0), p.rect.center, 18)
                     screen.blit(pygame.image.load("images/editor-0.9s-47px.gif"), p.rect.center)
                     self.jump_amount = 12  # gives a little boost when hit orb
                     self.canJump = True
+                    self.jump()
                     self.jump_amount = 10  # return jump_amount to normal
 
                 if isinstance(p, End):
@@ -201,11 +215,15 @@ class Player(pygame.sprite.Sprite):
 
                 if isinstance(p, Spike):
                     self.died = True  # die on spike
-                    # reset()
+
+                    #DEBUG
+                    print("Collided with Spike. Player dead? ", self.died)
+
                     attempts += 1
+                    #reset()
 
                     # DEBUG
-                    print("Player position when died: ", player.x_pos)
+                    #print("Player position when died: ", player.x_pos)
 
                 if isinstance(p, Coin):
                     # keeps track of all coins throughout the whole game(total of 6 is possible)
@@ -227,9 +245,13 @@ class Player(pygame.sprite.Sprite):
 
                         # reset jump
                         self.isjump = False
+
                     elif yvel < 0:
                         """if yvel is (-),player collided while jumping"""
                         self.rect.top = p.rect.bottom  # player top is set the bottom of block like it hits it head
+
+                        # DEBUG
+                        print("Collided with Platform while jumping. Player dead? ", self.died)
                     else:
                         """otherwise, if player collides with a block, he/she dies."""
                         self.vel.x = 0
@@ -238,7 +260,13 @@ class Player(pygame.sprite.Sprite):
                         attempts += 1
 
                         # DEBUG
-                        print("Player position when died: ", player.x_pos)
+                        #print("Player position when died: ", player.x_pos)
+
+                        # DEBUG
+                        print("Collided with Platform/Block. Player dead? ", self.died)
+
+                        reset()
+
 
     def jump(self):
         # DEBUG
@@ -272,7 +300,8 @@ class Player(pygame.sprite.Sprite):
         """check if game over """
 
         # do x-axis collisions
-        self.collide(0, self.platforms)
+        #self.collide(0, self.platforms)
+        self.collide(self.vel.x, self.platforms)
 
         # increment.update in y direction
         self.rect.top += self.vel.y
@@ -282,6 +311,8 @@ class Player(pygame.sprite.Sprite):
 
         # do y-axis collisions
         self.collide(self.vel.y, self.platforms)
+
+        self._update_ui()
 
         if not self.onGround:  # only accelerate with gravity if in the air
             self.vel += GRAVITY  # Gravity falls
@@ -305,8 +336,9 @@ class Player(pygame.sprite.Sprite):
 
         # DEBUG
         print("end of update")
+
         # DEBUG
-        print("velocity is:", self.vel.x)
+        #print("velocity is:", self.vel.x)
 
         # Self.died or self.win will determine if we are done (for agent.train() loop)
         return reward, (self.died or self.win), self.rect.left
@@ -363,6 +395,9 @@ class Player(pygame.sprite.Sprite):
 
     def draw_elements(self, screen):
         elements.draw(screen)
+
+    def check_if_dead(self) -> bool:
+        return self.died
 
 """
 Functions
@@ -474,6 +509,7 @@ def death_screen():
     reset()
 
 
+
 def eval_outcome(won: bool, died: bool):
     """simple function to run the win or die screen after checking won or died"""
     if won:
@@ -525,6 +561,10 @@ def reset():
     global player, elements, player_sprite, level
 
     # DEBUG
+    player.died = False
+    print("In reset(): Player Dead? ", player.died)
+
+    # DEBUG
     print("in reset function here")
 
     if level == 1:
@@ -570,8 +610,10 @@ def draw_stats(surf, money=0):
     BAR_HEIGHT = 10
     for i in range(1, money):
         screen.blit(coin, (BAR_LENGTH, 25))
-    #fill += 0.5
-    fill += 0.1
+    if player.check_if_dead():
+        fill = 0
+    else:
+        fill += 0.5
     outline_rect = pygame.Rect(0, 0, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(0, 0, fill, BAR_HEIGHT)
     col = progress_colors[int(fill / 100)]
