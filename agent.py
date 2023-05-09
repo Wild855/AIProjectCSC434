@@ -22,20 +22,20 @@ from helper import plot
 # Predefined variables
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
-LR = 0.001              # learning rate
+LR = 0.0005              # learning rate
 
 
 class Agent:
     #how far the player can see ahead of itself
     global sight_distance 
-    sight_distance = 20
+    sight_distance = 5
     def __init__(self):
         self.number_of_games = 0
         self.epsilon = 0            # for randomness
         self.gamma = 0.9            # discount rate
         self.memory = deque(maxlen = MAX_MEMORY)        # holds the actions, pops left once we exceed the max memory capacity
         #TODO - make this better (not hardcoded)
-        self.model = Linear_QNet((18*sight_distance*3)+2, 256, 2)
+        self.model = Linear_QNet(1, 256, 2)
         self.trainer = QTrainer(self.model, lr = LR, gamma = self.gamma)
 
     '''
@@ -49,19 +49,38 @@ class Agent:
         # Jump state
         state = []
         #convert pixels into tile position in array
-        x_pos = math.floor(game.rect.left / 32)
+        current_tile_x_pos = 0
+        first_tile_current_x_pos = main.spriteList[0].rect.left
+        for element in main.spriteList:
+            if(element.rect.left <= game.rect.left):
+                #DEBUG
+                #print("HEY WE'RE HERE")
+                #print("current x pos: " + str(current_tile_x_pos) + " new potential x pos: " + str(element.rect.left))
+                current_tile_x_pos = max(current_tile_x_pos, element.rect.left)
+        #DEBUG
+        #print("current tile: " + str(int((current_tile_x_pos - first_tile_current_x_pos) / 32)))
+        player_offset_from_tile = game.rect.left - current_tile_x_pos
+        current_tile_x_pos = int((current_tile_x_pos - first_tile_current_x_pos) / 32)
         
-
-        for row in main.platformList:
-            for i in range(x_pos, x_pos+sight_distance):
-                if i < len(row):
-                    state.append(row[i] == "Spike")
-                    state.append(row[i] == "Orb")
-                    state.append(row[i] == "0")
-
-        state.append(game.rect.centerx)
-        state.append(game.rect.centery)
-        state = np.array(state, dtype=int)
+        min_distance = 3200
+        for j in range(13, 18):
+            for i in range(current_tile_x_pos, current_tile_x_pos+sight_distance):
+                if i < len(main.platformList[j]):
+                    val = int(main.platformList[j][i])
+                    #print("IS SPIKE? " + str(val == 3))
+                    if(val == 3):
+                        distance = i-current_tile_x_pos
+                        if distance > 0:
+                            min_distance = min(distance, min_distance)
+        state.append(float(min_distance)/100)
+        #state.append(player_offset_from_tile)
+        #state.append(game.rect.centery)
+        state = np.array(state, dtype=float)
+        #print("about to print state:")
+        #DEBUG
+        #for element in state:
+        #    print(str(element))
+        #print("done printing state")
 
         return state
         
@@ -93,7 +112,7 @@ class Agent:
             mini_sample = self.memory
 
         # DEBUG
-        print("size: ", len(mini_sample))
+        #print("size: ", len(mini_sample))
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
 
@@ -122,17 +141,18 @@ class Agent:
     Random moves: tradeoff exploration / exploitation
     '''
     def get_action(self, state):
-        self.epsilon = 80 - self.number_of_games
+        self.epsilon = 160 - self.number_of_games
         final_move = [0,0]
 
-        # Get a random integer between 0 and 200
-        if random.randint(0, 200) < self.epsilon:
+        if random.randint(0, 8000) < self.epsilon:
             move = random.randint(0, 1)
             final_move[move] = 1
         else:
             state0 = torch.tensor(state, dtype = torch.float)   # creates multi-dimensional matrix containing floats
             prediction = self.model(state0)                     # model makes a prediction based on the given state
+            #print("Model's prediction: " + str(prediction))
             move = torch.argmax(prediction).item()              # returns the indices of the maximum value of all elements in the input tensor
+            #print("Model's final move: " + str(move))
             final_move[move] = 1
 
         return final_move
@@ -143,29 +163,31 @@ Training method
 '''
 def train():
     # DEBUG
-    print("initializing player")
-    # sets the frame rate of the program
-    clock = pygame.time.Clock()
+    #print("the start of train()")
+   
     main.reset()
     plot_scores = []
     plot_mean_scores = []
     total_score = 0
     record = 0
     agent = Agent()
+    current_game_score = 0
 
 
     while True:
-        clock.tick(60)
+        
         state_old = agent.get_state(main.player)                   # get the old state
 
         final_move = agent.get_action(state_old)            # get move
 
         # DEBUG
-        print("about to call player.update")
+        #print("about to call player.update")
         reward, done, score = main.player.update(final_move)    # perform move and get new state
+        current_game_score = max(current_game_score, score)
+        #print("NEW SCORE " + str(current_game_score))
 
         # DEBUG
-        print("finished updating")
+        #print("finished updating")
         state_new = agent.get_state(main.player)
 
         agent.train_short_memory(state_old, final_move, reward, state_new, done)    # train short memory
@@ -175,30 +197,31 @@ def train():
         # We aren't reaching this point because done is not True 05/03/2023 -SW
         if done:
             # DEBUG
-            print("done here?")
+            #print("done here?")
             # train long memory and plot result
             main.reset()
             agent.number_of_games += 1
             agent.train_long_memory()
 
             # save the best score
-            if score > record:
-                record = score
+            if current_game_score > record:
+                record = current_game_score
                 # agent.model.save()
 
             # Print results
-            print('Game', agent.number_of_games, 'Score', score, 'Record', record)
+            #print('Game', agent.number_of_games, 'Score', current_game_score, 'Record', record)
 
             # update scores
-            plot_scores.append(score)
-            total_score += score
+            plot_scores.append(current_game_score)
+            total_score += current_game_score
             mean_score = total_score / agent.number_of_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores, plot_mean_scores)
+            current_game_score = 0
 
 
 # entry point
 if __name__ == '__main__':
     # DEBUG
-    print("training started")
+    #print("training started")
     train()

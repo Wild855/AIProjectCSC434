@@ -32,19 +32,20 @@ pygame.init()
 # creates a screen variable of size 800 x 600
 screen = pygame.display.set_mode([800, 600])
 
-# controls the main game while loop
-
 # controls whether or not to start the game from the main menu
-
+# sets the frame rate of the program
+clock = pygame.time.Clock()
 
 global done, start
 # DEBUG
-print("start initialized here")
+#print("start initialized here")
 start = False
 
 # DEBUG
-print(start)
+#print(start)
 done = False
+
+attempts = 0
 
 """
 CONSTANTS
@@ -63,7 +64,9 @@ class Draw(pygame.sprite.Sprite):
     def __init__(self, image, pos, *groups):
         super().__init__(*groups)
         self.image = image
+        self.pos = pos
         self.rect = self.image.get_rect(topleft=pos)
+
 #  ====================================================================================================================#
 #  classes of all obstacles. this may seem repetitive but it is useful(to my knowledge)
 #  ====================================================================================================================#
@@ -80,6 +83,7 @@ class Spike(Draw):
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
+
 
 
 class Coin(Draw):
@@ -111,6 +115,303 @@ class End(Draw):
 
 
 """
+Main player class
+"""
+
+class Player(pygame.sprite.Sprite):
+    """Class for player. Holds update method, win and die variables, collisions and more."""
+    win: bool
+    died: bool
+
+    def __init__(self, image, platforms, pos, *groups):
+
+        """
+        :param image: block face avatar
+        :param platforms: obstacles such as coins, blocks, spikes, and orbs
+        :param pos: starting position
+        :param groups: takes any number of sprite groups.
+        """
+        # DEBUG
+        #print("in Player init function")
+
+        super().__init__(*groups)
+
+        # DEBUG
+        #print("test")
+
+        self.onGround = False  # player on ground?
+        self.platforms = platforms  # obstacles but create a class variable for it
+        self.died = False  # player died?
+        self.win = False  # player beat level?
+
+        self.image = pygame.transform.smoothscale(image, (32, 32))
+        self.rect = self.image.get_rect(center=pos)  # get rect gets a Rect object from the image
+        self.x_pos = math.floor(self.rect.left / 32)
+        self.pos_x = pos[0]
+        self.jump_amount = 10  # jump strength
+        self.particles = []  # player trail
+        self.isjump = False  # is the player jumping?
+        self.vel = Vector2(0, 0)  # velocity starts at zero
+        self.collided = False
+
+    def draw_particle_trail(self, x, y, color=(255, 255, 255)):
+        """draws a trail of particle-rects in a line at random positions behind the player"""
+
+        self.particles.append(
+            [[x - 5, y - 8], [random.randint(0, 25) / 10 - 1, random.choice([0, 0])],
+             random.randint(5, 8)])
+
+        for particle in self.particles:
+            particle[0][0] += particle[1][0]
+            particle[0][1] += particle[1][1]
+            particle[2] -= 0.5
+            particle[1][0] -= 0.4
+            rect(alpha_surf, color,
+                 ([int(particle[0][0]), int(particle[0][1])], [int(particle[2]) for i in range(2)]))
+            if particle[2] <= 0:
+                self.particles.remove(particle)
+
+    def reward(self):
+        new_x_pos = math.floor(self.rect.left / 32)
+
+        if (self.died):
+            return -100
+        elif (self.win):
+            print("Win")
+            return 1000
+        else:
+            #DEBUG
+            #print("Got farther than last record! Current new_x_pos: ", new_x_pos, "\n")
+            #print("Old x_pos: ", self.pos_x)
+            self.pos_x = new_x_pos
+            #print("New x_pos: ", self.pos_x)
+            return 1
+
+
+    def collide(self, yvel, platforms):
+        global coins, attempts
+
+        self.canJump = False
+
+        # DEBUG
+        #print("Begin collide(): Player dead ? ", self.died)
+        #print("Collide(): Collided? ", self.collided)
+
+        for p in platforms:
+            if pygame.sprite.collide_rect(self, p):
+                """pygame sprite builtin collision method,
+                sees if player is colliding with any obstacles"""
+
+                self.collided = True
+                #DEBUG
+                #print("Collide(): Inside if statement...Collided? ", self.collided)
+
+                if isinstance(p, Orb):
+                    pygame.draw.circle(alpha_surf, (255, 255, 0), p.rect.center, 18)
+                    screen.blit(pygame.image.load("images/editor-0.9s-47px.gif"), p.rect.center)
+                    self.jump_amount = 12  # gives a little boost when hit orb
+                    self.canJump = True
+                    self.jump()
+                    self.jump_amount = 10  # return jump_amount to normal
+
+                elif isinstance(p, End):
+                    self.win = True
+
+                elif isinstance(p, Spike):
+                    self.died = True  # die on spike
+
+                    #DEBUG
+                    #print("Collided with Spike. Player dead? ", self.died)
+
+                    attempts += 1
+
+                    #reset()
+
+                    # DEBUG
+                    #print("Player position when died: ", player.x_pos)
+
+                elif isinstance(p, Coin):
+                    # keeps track of all coins throughout the whole game(total of 6 is possible)
+                    coins += 1
+
+                    # erases a coin
+                    p.rect.x = 0
+                    p.rect.y = 0
+
+                elif isinstance(p, Platform):  # these are the blocks (may be confusing due to self.platforms)
+
+                    if yvel > 0:
+                        """if player is going down(yvel is +)"""
+                        self.rect.bottom = p.rect.top  # dont let the player go through the ground
+                        self.vel.y = 0  # rest y velocity because player is on ground
+
+                        # set self.onGround to true because player collided with the ground
+                        self.onGround = True
+
+                        # reset jump
+                        self.isjump = False
+
+                    elif yvel < 0:
+                        """if yvel is (-),player collided while jumping"""
+                        self.rect.top = p.rect.bottom  # player top is set the bottom of block like it hits it head
+
+                        # DEBUG
+                        #print("Collided with Platform while jumping. Player dead? ", self.died)
+                    else:
+                        """otherwise, if player collides with a block, he/she dies."""
+                        self.vel.x = 0
+                        self.rect.right = p.rect.left  # dont let player go through walls
+                        self.died = True
+                        attempts += 1
+
+                        # DEBUG
+                        #print("Player position when died: ", player.x_pos)
+
+                        # DEBUG
+                        #print("Collided with Platform/Block. Player dead? ", self.died)
+
+                        reset()
+
+
+    def jump(self):
+        # DEBUG
+        #print("in jump function rn")
+        self.vel.y = -self.jump_amount  # players vertical velocity is negative so ^
+
+    def move_player(self):
+        self.pos_x += self.vel.x
+
+    def update(self, final_move):
+        global start, angle, fill
+        # DEBUG
+        #print("updating")
+        keys = pygame.key.get_pressed()
+        # start = false at the beginning of the game so that the title screen shows up. Pushing should start the game.
+        if not start:
+            wait_for_key()
+            reset()
+        # start = true because the game has begun. also prevents the game from showing the title screen again
+        start = True
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    start = True
+                    waiting = False
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+
+        """Move player"""
+        self._move(final_move)
+        self._update_ui()
+
+        # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
+        # self.died = True
+        # print("Final move value:")
+        # print(final_move[0])
+
+        """check if game over """
+
+        # do x-axis collisions
+        #self.collide(0, self.platforms)
+        self.collide(self.vel.x, self.platforms)
+
+        # increment.update in y direction
+        self.rect.top += self.vel.y
+
+        # assuming player in the air, and if not it will be set to inversed after collide
+        self.onGround = False
+
+        # do y-axis collisions
+        self.collide(self.vel.y, self.platforms)
+
+        self._update_ui()
+
+        if not self.onGround:  # only accelerate with gravity if in the air
+            self.vel += GRAVITY  # Gravity falls
+
+            # max falling speed
+            if self.vel.y > 100: self.vel.y = 100
+
+        # check if we won or if player won
+        # all this function does is show the win and die screens, don't need it
+        # eval_outcome(self.win, self.died)
+
+        reward = self.reward()
+
+        # DEBUG
+        #print("reward is: ", reward)
+
+        """update ui and clock"""
+        pygame.display.update()
+        pygame.display.flip()
+        clock.tick(100000)
+
+        # DEBUG
+        #print("end of update")
+
+        # DEBUG
+        #print("velocity is:", self.vel.x)
+
+        # Self.died or self.win will determine if we are done (for agent.train() loop)
+        return reward, (self.died or self.win), fill
+
+    def _move(self, final_move):
+        global angle
+
+        # Trying to change x_pos
+        self.move_player()
+
+        if final_move[0] == 1:
+            self.isjump = True
+
+        if self.isjump:
+            # removed line from if statement: or self.canJump
+            if self.onGround:
+                """if player wants to jump and player is on the ground: only then is jump allowed"""
+                self.jump()
+
+            """rotate the player by an angle and blit it if player is jumping"""
+            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
+            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
+        else:
+            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
+            player_sprite.draw(screen)  # draw player sprite group
+            # DEBUG
+            #print("Player is false")
+
+    def _update_ui(self):
+        # map, player movement update
+        # velocity the player moves at throughout the game
+        # print(self.vel.x)
+        self.vel.x = 6
+        # Reduce the alpha of all pixels on this surface each frame.
+        # Control the fade2 speed with the alpha value.
+        # draw background
+        alpha_surf.fill((255, 255, 255, 1), special_flags=pygame.BLEND_RGBA_MULT)
+        # apply player speed to camera
+        CameraX = self.vel.x  # for moving obstacles
+        move_map()  # apply CameraX to all elements
+        screen.blit(bg, (0, 0))  # Clear the screen(with the bg)
+
+        self.draw_particle_trail(self.rect.left - 1, self.rect.bottom + 2,
+                                 WHITE)
+        screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
+        draw_stats(screen, coin_count(coins))
+
+        self.draw_elements(screen)  # draw all other obstacles
+        self.draw_player(screen)
+        #player_sprite.draw(screen)
+
+    def draw_player(self, screen):
+        player_sprite.draw(screen)
+
+    def draw_elements(self, screen):
+        elements.draw(screen)
+
+    def check_if_dead_or_won(self) -> bool:
+        return self.died or self.win
+
+"""
 Functions
 """
 
@@ -118,30 +419,59 @@ Functions
 def init_level(map):
     """this is similar to 2d lists. it goes through a list of lists, and creates instances of certain obstacles
     depending on the item in the list"""
+    global spriteList
+    spriteList = []
     x = 0
     y = 0
+    for element in map[0]:
+        if element == "0":
+            p = Platform(block, (x, y), elements)
+            spriteList.append(p)
+                
+        if element == "Coin":
+            p = Coin(coin, (x, y), elements)
+            spriteList.append(p)
 
+        if element == "3":
+            p = Spike(spike, (x, y), elements)
+            spriteList.append(p)
+        if element == "Orb":
+            orbs.append([x, y])
+
+            p = Orb(orb, (x, y), elements)
+            spriteList.append(p)
+
+        if element == "T":
+            p = Trick(trick, (x, y), elements)
+            spriteList.append(p)
+
+        if element == "4":
+            p = End(avatar, (x, y), elements)
+            spriteList.append(p)
+        x += 32
+        #print(p.rect.x)
+    x = 0
     for row in map:
         for col in row:
-
+            
             if col == "0":
-                Platform(block, (x, y), elements)
-
+                p = Platform(block, (x, y), elements)
+                
             if col == "Coin":
-                Coin(coin, (x, y), elements)
+                p = Coin(coin, (x, y), elements)
 
-            if col == "Spike":
-                Spike(spike, (x, y), elements)
+            if col == "3":
+                p = Spike(spike, (x, y), elements)
             if col == "Orb":
                 orbs.append([x, y])
 
-                Orb(orb, (x, y), elements)
+                p = Orb(orb, (x, y), elements)
 
             if col == "T":
-                Trick(trick, (x, y), elements)
+                p = Trick(trick, (x, y), elements)
 
-            if col == "End":
-                End(avatar, (x, y), elements)
+            if col == "4":
+                p = End(avatar, (x, y), elements)
             x += 32
         y += 32
         x = 0
@@ -181,6 +511,7 @@ def blitRotate(surf, image, pos, originpos: tuple, angle: float):
 
 def won_screen():
     """show this screen when beating a level"""
+    #global attempts, level, fill
     global attempts, level, fill
     attempts = 0
     player_sprite.clear(player.image, screen)
@@ -207,6 +538,7 @@ def won_screen():
 def death_screen():
     """show this screenon death"""
     global attempts, fill
+    #print("SETTING FILL TO ZERO HERE 2")
     fill = 0
     player_sprite.clear(player.image, screen)
     attempts += 1
@@ -219,6 +551,7 @@ def death_screen():
     reset()
 
 
+
 def eval_outcome(won: bool, died: bool):
     """simple function to run the win or die screen after checking won or died"""
     if won:
@@ -226,6 +559,7 @@ def eval_outcome(won: bool, died: bool):
     if died:
         death_screen()
 
+    #return
 
 def block_map(level_num):
     """
@@ -245,9 +579,9 @@ def block_map(level_num):
 def start_screen():
     """main menu. option to switch level, and controls guide, and game overview."""
     global level, start
-    if start:
+    if not start:
         # DEBUG
-        print("screen filled black")
+        # print("screen filled black")
         screen.fill(BLACK)
         if pygame.key.get_pressed()[pygame.K_1]:
             level = 0
@@ -269,17 +603,23 @@ def reset():
     global player, elements, player_sprite, level
 
     # DEBUG
-    print("in reset function here")
-
-    if level == 1:
-        pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
-    pygame.mixer_music.play()
-    player_sprite = pygame.sprite.Group()
-    elements = pygame.sprite.Group()
-    player = Player(avatar, elements, (150, 150), player_sprite)
+    player.died = False
+    #print("In reset(): Player Dead? ", player.died)
 
     # DEBUG
-    print("Player initialized here")
+    #print("in reset function here")
+
+    #if level == 1:
+        #DEBUG
+        #print("level 1 music playing")
+        #pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
+    #pygame.mixer_music.play()
+    player_sprite = pygame.sprite.Group()
+    elements = pygame.sprite.Group()
+    player = Player(avatar, elements, (100, 150), player_sprite)
+
+    # DEBUG
+    #print("Player initialized here")
 
     init_level(
             block_map(
@@ -287,9 +627,15 @@ def reset():
 
 
 def move_map():
+    CameraX = 5
     """moves obstacles along the screen"""
     for sprite in elements:
         sprite.rect.x -= CameraX
+        player.x_pos += CameraX
+
+
+        # DEBUG
+        #print("Player x position is: ", player.x_pos)
 
 
 def draw_stats(surf, money=0):
@@ -306,12 +652,17 @@ def draw_stats(surf, money=0):
     BAR_HEIGHT = 10
     for i in range(1, money):
         screen.blit(coin, (BAR_LENGTH, 25))
-    fill += 0.5
+    if player.check_if_dead_or_won():
+        #print("SETTING FILL TO ZERO HERE 3")
+        fill = 0
+    else:
+        #print("INCREMENTING FILL HERE")
+        fill += 0.5
     outline_rect = pygame.Rect(0, 0, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(0, 0, fill, BAR_HEIGHT)
-    col = progress_colors[int(fill / 100)]
-    rect(surf, col, fill_rect, 0, 4)
-    rect(surf, WHITE, outline_rect, 3, 4)
+    #col = progress_colors[int(fill / 100)]
+    #rect(surf, col, fill_rect, 0, 4)
+    #rect(surf, WHITE, outline_rect, 3, 4)
     screen.blit(tries, (BAR_LENGTH, 0))
 
 
@@ -328,6 +679,8 @@ def wait_for_key():
             start_screen()
 
         for event in pygame.event.get():
+            #DEBUG
+            #print("Entered event for loop")
             if event.type == pygame.QUIT:
                 pygame.quit()
             if event.type == pygame.KEYDOWN:
@@ -363,6 +716,8 @@ def resize(img, size=(32, 32)):
 """
 Global variables
 """
+#DEBUG
+#print("global vars assigned")
 font = pygame.font.SysFont("lucidaconsole", 20)
 
 # square block face is main character the icon of the window is the block face
@@ -375,6 +730,7 @@ alpha_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 player_sprite = pygame.sprite.Group()
 elements = pygame.sprite.Group()
 
+player = Player(avatar, elements, (145, 150), player_sprite)
 # images
 spike = pygame.image.load(os.path.join("images", "obj-spike.png"))
 spike = resize(spike)
@@ -388,15 +744,14 @@ trick = pygame.image.load((os.path.join("images", "obj-breakable.png")))
 trick = pygame.transform.smoothscale(trick, (32, 32))
 
 #  ints
+#print("SETTING FILL TO ZERO HERE 1")
 fill = 0
 num = 0
 CameraX = 0
-attempts = 0
 coins = 0
 global angle
 angle = 0
 # DEBUG
-print("angle assigned here")
 
 level = 0
 
@@ -420,7 +775,7 @@ text = font.render('image', False, (255, 255, 0))
 
 # music
 music = pygame.mixer_music.load(os.path.join("music", "bossfight-Vextron.mp3"))
-pygame.mixer_music.play()
+#pygame.mixer_music.play()
 
 # bg image
 bg = pygame.image.load(os.path.join("images", "bg.png"))
@@ -442,199 +797,6 @@ e.g.
 color = lambda: tuple([random.randint(0, 255) for i in range(3)])  # lambda function for random color, not a constant.
 GRAVITY = Vector2(0, 0.86)  # Vector2 is a pygame
 
-"""
-Main player class
-"""
-
-
-class Player(pygame.sprite.Sprite):
-    """Class for player. Holds update method, win and die variables, collisions and more."""
-    win: bool
-    died: bool
-
-    def __init__(self, image, platforms, pos, *groups):
-        
-        """
-        :param image: block face avatar
-        :param platforms: obstacles such as coins, blocks, spikes, and orbs
-        :param pos: starting position
-        :param groups: takes any number of sprite groups.
-        """
-        # DEBUG
-        print("in init function")
-
-        super().__init__(*groups)
-
-        # DEBUG
-        print("test")
-
-        self.onGround = False  # player on ground?
-        self.platforms = platforms  # obstacles but create a class variable for it
-        self.died = False  # player died?
-        self.win = False  # player beat level?
-
-        self.image = pygame.transform.smoothscale(image, (32, 32))
-        self.rect = self.image.get_rect(center=pos)  # get rect gets a Rect object from the image
-        self.x_pos = math.floor(self.rect.left / 32)
-        self.jump_amount = 10  # jump strength
-        self.particles = []  # player trail
-        self.isjump = False  # is the player jumping?
-        self.vel = Vector2(0, 0)  # velocity starts at zerlo
-
-    def draw_particle_trail(self, x, y, color=(255, 255, 255)):
-        """draws a trail of particle-rects in a line at random positions behind the player"""
-
-        self.particles.append(
-                [[x - 5, y - 8], [random.randint(0, 25) / 10 - 1, random.choice([0, 0])],
-                 random.randint(5, 8)])
-
-        for particle in self.particles:
-            particle[0][0] += particle[1][0]
-            particle[0][1] += particle[1][1]
-            particle[2] -= 0.5
-            particle[1][0] -= 0.4
-            rect(alpha_surf, color,
-                 ([int(particle[0][0]), int(particle[0][1])], [int(particle[2]) for i in range(2)]))
-            if particle[2] <= 0:
-                self.particles.remove(particle)
-
-    def reward(self):
-        new_x_pos = math.floor(self.rect.left / 32)
-        
-        if(self.died):
-            return -10
-        if(self.x_pos < new_x_pos):
-            self.x_pos = new_x_pos
-            return 10
-        return 0
-
-    def collide(self, yvel, platforms):
-        global coins
-        self.canJump = False
-        for p in platforms:
-            if pygame.sprite.collide_rect(self, p):
-                """pygame sprite builtin collision method,
-                sees if player is colliding with any obstacles"""
-                if isinstance(p, Orb):
-                    pygame.draw.circle(alpha_surf, (255, 255, 0), p.rect.center, 18)
-                    screen.blit(pygame.image.load("images/editor-0.9s-47px.gif"), p.rect.center)
-                    self.jump_amount = 12  # gives a little boost when hit orb
-                    self.canJump = True
-                    self.jump_amount = 10  # return jump_amount to normal
-
-                if isinstance(p, End):
-                    self.win = True
-
-                if isinstance(p, Spike):
-                    self.died = True  # die on spike
-
-                if isinstance(p, Coin):
-                    # keeps track of all coins throughout the whole game(total of 6 is possible)
-                    coins += 1
-
-                    # erases a coin
-                    p.rect.x = 0
-                    p.rect.y = 0
-
-                if isinstance(p, Platform):  # these are the blocks (may be confusing due to self.platforms)
-
-                    if yvel > 0:
-                        """if player is going down(yvel is +)"""
-                        self.rect.bottom = p.rect.top  # dont let the player go through the ground
-                        self.vel.y = 0  # rest y velocity because player is on ground
-
-                        # set self.onGround to true because player collided with the ground
-                        self.onGround = True
-
-                        # reset jump
-                        self.isjump = False
-                    elif yvel < 0:
-                        """if yvel is (-),player collided while jumping"""
-                        self.rect.top = p.rect.bottom  # player top is set the bottom of block like it hits it head
-                    else:
-                        """otherwise, if player collides with a block, he/she dies."""
-                        self.vel.x = 0
-                        self.rect.right = p.rect.left  # dont let player go through walls
-                        self.died = True
-
-    def jump(self):
-        self.vel.y = -self.jump_amount  # players vertical velocity is negative so ^
-
-    def update(self, final_move):
-        global start, angle
-        # DEBUG
-        print("updating")
-        keys = pygame.key.get_pressed()
-        start = True
-
-        self.vel.x = 0
-
-        # DEBUG - Trying this out to stop the infinite loop from agent:train() - SW
-        self.died = True
-        
-        if final_move[0] == 1:
-            self.isjump = True
-
-        # Reduce the alpha of all pixels on this surface each frame.
-        # Control the fade2 speed with the alpha value.
-
-        alpha_surf.fill((255, 255, 255, 1), special_flags=pygame.BLEND_RGBA_MULT)
-
-        CameraX = self.vel.x  # for moving obstacles
-        move_map()  # apply CameraX to all elements
-        screen.blit(bg, (0, 0))  # Clear the screen(with the bg)
-
-        self.draw_particle_trail(self.rect.left - 1, self.rect.bottom + 2,
-                                WHITE)
-        screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
-        draw_stats(screen, coin_count(coins))
-
-        if self.isjump:
-            """rotate the player by an angle and blit it if player is jumping"""
-            angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
-            blitRotate(screen, self.image, self.rect.center, (16, 16), angle)
-        else:
-            """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
-            player_sprite.draw(screen)  # draw player sprite group
-        elements.draw(screen)  # draw all other obstacles
-
-        # do x-axis collisions
-        self.collide(0, self.platforms)
-
-        # increment in y direction
-        self.rect.top += self.vel.y
-
-        # assuming player in the air, and if not it will be set to inversed after collide
-        self.onGround = False
-
-        # do y-axis collisions
-        self.collide(self.vel.y, self.platforms)
-
-        """update player"""
-        if self.isjump:
-            if self.onGround or self.canJump:
-                """if player wants to jump and player is on the ground: only then is jump allowed"""
-                self.jump()
-
-        if not self.onGround:  # only accelerate with gravity if in the air
-            self.vel += GRAVITY  # Gravity falls
-
-            # max falling speed
-            if self.vel.y > 100: self.vel.y = 100
-
-        
-
-        # check if we won or if player won
-        #all this function does is show the win and die screens, don't need it
-        #eval_outcome(self.win, self.died)
-
-        reward = self.reward()
-
-        # Self.died or self.win will determine if we are done (for agent.train() loop)
-        return reward, (self.died or self.win), self.rect.left
-
-    
-
 
 """
 Obstacle classes
@@ -647,7 +809,7 @@ Obstacle classes
 
 
 
-player = Player(avatar, elements, (150, 150), player_sprite)
+#player = Player(avatar, elements, (150, 150), player_sprite)
 
 
 

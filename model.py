@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import os
+import numpy
 
 '''
 '''
@@ -87,10 +88,11 @@ class QTrainer:
     done            indicates whether we got a game over
     '''
     def train_step(self, state, action, reward, next_state, done):
+        state = numpy.array(state)
         state = torch.tensor(state, dtype = torch.float)
         next_state = torch.tensor(next_state, dtype = torch.float)
         action = torch.tensor(action, dtype = torch.float)
-        print(reward)
+        #print(reward)
         reward = torch.tensor(reward, dtype = torch.float)
         # (n, x)
 
